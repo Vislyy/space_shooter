@@ -1,5 +1,6 @@
 import pygame
 import random
+from saving_manager import *
 
 missed_enemies = 0
 class BaseSprite:
@@ -22,7 +23,6 @@ class Ufo(BaseSprite):
 
     def update(self):
         global missed_enemies
-
         self.hitbox.y += self.speed
         if self.hitbox.y >= 650:
             self.x = random.randint(100, 700)
@@ -80,8 +80,13 @@ def start_game():
     window = pygame.display.set_mode([800, 600])
     background_img = pygame.image.load("assets/galaxy.jpg")
     background_img = pygame.transform.scale(background_img, [800, 600])
+    local_money = 0
+
+    player = read_data()
+    writing_data(player)
+
     fps = pygame.time.Clock()
-    rocket = Rocket(400, 520, 5, "assets/rocket.png", 30, 70)
+    rocket = Rocket(400, 520, 5, player["skin"], 30, 70)
     meteors = [Meteor(225, 200), Meteor(400, 125)]
 
     enemies = []
@@ -99,6 +104,8 @@ def start_game():
                  .render(f"Знищено: {str(destroyed_enemies)}", True, [255, 255, 255]))
         missed_enemies_lbl = (pygame.font.Font(None, 35)
                  .render(f"Пропущено: {str(missed_enemies)}", True, [255, 255, 255]))
+        local_money_lbl = (pygame.font.Font(None, 35)
+                              .render(f"Гроші: {str(local_money)}", True, [255, 255, 255]))
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -116,9 +123,14 @@ def start_game():
                     enemy.hitbox.y = -100
                     enemy.hitbox.x = random.randint(100, 700)
                     destroyed_enemies += 1
+                    money = read_data()
+                    money["money"] += 1
+                    writing_data(money)
+                    local_money += 1
                     break
         window.blit(score, [0, 0])
         window.blit(missed_enemies_lbl, [0, 40])
+        window.blit(local_money_lbl, [0, 70])
         rocket.draw(window)
         rocket.control()
         pygame.display.flip()
