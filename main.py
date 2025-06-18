@@ -1,6 +1,7 @@
 import pygame
 import random
 
+missed_enemies = 0
 class BaseSprite:
     def __init__(self, x, y, speed, texture, w, h):
         self.speed = speed
@@ -20,15 +21,19 @@ class Ufo(BaseSprite):
         self.direction = "forward"
 
     def update(self):
+        global missed_enemies
+
         self.hitbox.y += self.speed
         if self.hitbox.y >= 650:
             self.x = random.randint(100, 700)
             self.hitbox.y = -150
+            missed_enemies += 1
 
 class Rocket(BaseSprite):
     def __init__(self, x, y, speed, texture, w, h):
         super().__init__(x, y, speed, texture, w, h)
         self.bullets = []
+        self.fire = pygame.mixer.Sound("assets/fire.ogg")
     def control(self):
         keys = pygame.key.get_pressed()
         if keys[pygame.K_a]:
@@ -37,6 +42,7 @@ class Rocket(BaseSprite):
             self.hitbox.x += self.speed
         if keys[pygame.K_SPACE]:
             self.bullets.append(Bullet(self.hitbox.x + 10, self.hitbox.y, 4, "assets/bullet.png", 5, 10))
+            self.fire.play()
 class Meteor:
     def __init__(self, x, y):
         self.texture = pygame.image.load("assets/asteroid.png")
@@ -56,50 +62,65 @@ class Bullet:
         self.hitbox.y = y
         self.speed = speed
 
-
-
-
     def draw(self, window):
         window.blit(self.texture, self.hitbox)
-pygame.init()
 
-window = pygame.display.set_mode([800, 600])
-background_img = pygame.image.load("assets/galaxy.jpg")
-background_img = pygame.transform.scale(background_img, [800, 600])
-fps = pygame.time.Clock()
-rocket = Rocket(400, 520, 5, "assets/rocket.png", 30, 70)
-meteors = [Meteor(225, 200), Meteor(400, 125)]
+    def update(self):
+        self.hitbox.y -= self.speed
 
-enemies = []
-y = 50
-for i in range(10):
-    x = random.randint(100, 700)
-    enemies.append(Ufo(x, y, 5, 'assets/ufo. png', 60, 40))
-    y -= 100
+def start_game():
+    global missed_enemies
+    pygame.init()
+    pygame.mixer.init()
+    pygame.mixer_music.load("assets/space.ogg")
+    pygame.mixer_music.set_volume(0.5)
+    pygame.mixer_music.play(-1)
 
-running = True
+    destroyed_enemies = 0
+    window = pygame.display.set_mode([800, 600])
+    background_img = pygame.image.load("assets/galaxy.jpg")
+    background_img = pygame.transform.scale(background_img, [800, 600])
+    fps = pygame.time.Clock()
+    rocket = Rocket(400, 520, 5, "assets/rocket.png", 30, 70)
+    meteors = [Meteor(225, 200), Meteor(400, 125)]
 
-while running:
-    window.blit(background_img, [0, 0])
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-    for meteor in meteors:
-        meteor.draw(window)
-    for enemy in enemies:
-        enemy.draw(window)
-        enemy.update()
-        print(enemy.hitbox.y)
-    for bullet in rocket.bullets[:]:
-        bullet.draw(window)
-        bullet.update()
+    enemies = []
+    y = 50
+    for i in range(10):
+        x = random.randint(100, 700)
+        enemies.append(Ufo(x, y, 5, 'assets/ufo.png', 60, 40))
+        y -= 100
+
+    running = True
+
+    while running:
+        window.blit(background_img, [0, 0])
+        score = (pygame.font.Font(None, 50)
+                 .render(f"Знищено: {str(destroyed_enemies)}", True, [255, 255, 255]))
+        missed_enemies_lbl = (pygame.font.Font(None, 35)
+                 .render(f"Пропущено: {str(missed_enemies)}", True, [255, 255, 255]))
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+        for meteor in meteors:
+            meteor.draw(window)
         for enemy in enemies:
-            if bullet.hitbox.colliderect(enemy.hitbox):
-                rocket.bullets.remove(bullet)
-                enemy.hitbox.y = -100
-                enemy.hitbox.x = random.randint(100, 700)
-    rocket.draw(window)
-    rocket.control()
-    pygame.display.flip()
-    fps.tick(60)
+            enemy.draw(window)
+            enemy.update()
+        for bullet in rocket.bullets[:]:
+            bullet.draw(window)
+            bullet.update()
+            for enemy in enemies:
+                if bullet.hitbox.colliderect(enemy.hitbox):
+                    rocket.bullets.remove(bullet)
+                    enemy.hitbox.y = -100
+                    enemy.hitbox.x = random.randint(100, 700)
+                    destroyed_enemies += 1
+                    break
+        window.blit(score, [0, 0])
+        window.blit(missed_enemies_lbl, [0, 40])
+        rocket.draw(window)
+        rocket.control()
+        pygame.display.flip()
+        fps.tick(60)
 
