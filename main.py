@@ -34,15 +34,27 @@ class Rocket(BaseSprite):
         super().__init__(x, y, speed, texture, w, h)
         self.bullets = []
         self.fire = pygame.mixer.Sound("assets/fire.ogg")
-    def control(self):
+        self.attack_cooldown = 1000
+        self.can_shoot = False
+    def update(self):
         keys = pygame.key.get_pressed()
         if keys[pygame.K_a]:
             self.hitbox.x -= self.speed
         if keys[pygame.K_d]:
             self.hitbox.x += self.speed
-        if keys[pygame.K_SPACE]:
+        if keys[pygame.K_SPACE] and self.can_shoot:
             self.bullets.append(Bullet(self.hitbox.x + 10, self.hitbox.y, 4, "assets/bullet.png", 5, 10))
             self.fire.play()
+            self.can_shoot = False
+            self.attack_cooldown = 1000
+
+        if self.attack_cooldown > 0:
+            self.attack_cooldown -= 20
+
+        if self.attack_cooldown <= 0:
+            self.can_shoot = True
+
+
 class Meteor:
     def __init__(self, x, y):
         self.texture = pygame.image.load("assets/asteroid.png")
@@ -82,6 +94,8 @@ def start_game():
     background_img = pygame.transform.scale(background_img, [800, 600])
     local_money = 0
 
+    game_data = read_data()
+
     player = read_data()
     writing_data(player)
 
@@ -93,7 +107,7 @@ def start_game():
     y = 50
     for i in range(10):
         x = random.randint(100, 700)
-        enemies.append(Ufo(x, y, 5, 'assets/ufo.png', 60, 40))
+        enemies.append(Ufo(x, y, 3, 'assets/ufo.png', 60, 40))
         y -= 100
 
     running = True
@@ -128,11 +142,14 @@ def start_game():
                     writing_data(money)
                     local_money += 1
                     break
+                elif bullet.hitbox.y <= game_data["range"]:
+                    rocket.bullets.remove(bullet)
+                    break
         window.blit(score, [0, 0])
         window.blit(missed_enemies_lbl, [0, 40])
         window.blit(local_money_lbl, [0, 70])
         rocket.draw(window)
-        rocket.control()
+        rocket.update()
         pygame.display.flip()
         fps.tick(60)
 
