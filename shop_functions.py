@@ -11,7 +11,6 @@ def buy_skin(price, img):
 
 def buy_boost(price, type):
     data = read_data()
-    element_data = read_shop_data()
     if data["money"] >= price:
         data["money"] -= price
         data[type] -= 20

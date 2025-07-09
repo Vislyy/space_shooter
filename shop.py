@@ -25,7 +25,7 @@ def shop_window():
             img_lbl.setPixmap(image_manager)
             price_lbl = QLabel(str(element["price"]))
             buy_btn = QPushButton("Купити")
-            buy_btn.clicked.connect(lambda _,price=element["price"], type_of_item="attack_speed"
+            buy_btn.clicked.connect(lambda _, price=element["price"], type_of_item="attack_speed"
                                     if element["name"] == "Швидкість атаки" else "range":
                                     buy_boost(price, type_of_item))
 

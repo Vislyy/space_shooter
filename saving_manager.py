@@ -14,11 +14,6 @@ def read_data():
         }
         return data
 
-def read_shop_data():
-    with open("data/shop_elements.py", "r", encoding="utf-8") as file:
-        data = json.load(file)
-        return data
-
 def writing_data(data):
     with open("data/player.json", "w", encoding ="utf-8") as file:
         json.dump(data, file, ensure_ascii=False)
